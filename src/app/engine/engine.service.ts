@@ -3,7 +3,7 @@ import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, GridHelper, Group, Fog,
   Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper, Object3D, Spherical,
-  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper
+  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper, InstancedMesh
 } from 'three'
 import {Octree} from 'three/examples/jsm/math/Octree'
 import {Capsule} from 'three/examples/jsm/math/Capsule'
@@ -50,6 +50,8 @@ export class EngineService implements OnDestroy {
 
   private mouse = new Vector2()
   private raycaster = new Raycaster()
+
+  private registeredInstances = new Set<string>()
 
   public constructor(private ngZone: NgZone, private userSvc: UserService) {
   }
@@ -197,12 +199,20 @@ export class EngineService implements OnDestroy {
     }
   }
 
-  public addObjectToScene(group: Group) {
+  public addObjectToScene(group: Object3D) {
     this.scene.add(group)
   }
 
-  public addObjectToWorld(group: Group) {
+  public addObjectToWorld(group: Object3D) {
     this.worldGroup.add(group)
+  }
+
+  public addInstancedObject(name: string, instance: InstancedMesh) {
+    if(!this.registeredInstances.has(name))
+    {
+      this.registeredInstances.add(name)
+      this.scene.add(instance)
+    }
   }
 
   public addMeshToOctree(group: Group) {

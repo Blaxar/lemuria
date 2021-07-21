@@ -5,13 +5,18 @@ import {Group, Mesh, InstancedMesh, ConeGeometry, LoadingManager, MeshBasicMater
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
 
-class CachedObject {
+export class CachedObject {
 
-  private original : Mesh // Original instance of the loaded object.
-  private instanced : InstancedMesh // InstancedMesh for the object, allows for efficient spawning of multiple instances
-  private globalToLocalIdMap : Map<number, number>
-  private availableSlots : Set<number>
+  private original: Mesh // Original instance of the loaded object.
+  instanced: InstancedMesh // InstancedMesh for the object, allows for efficient spawning of multiple instances
+  private globalToLocalIdMap = new Map<number, number>()
+  private availableSlots = new Set<number>() // Maybe use a queue?
   private counter : number = 0
+
+  name: string
+  date: any
+  desc: string
+  act: string
 
   constructor( object: Mesh, count: number) {
     this.original = object
@@ -20,6 +25,7 @@ class CachedObject {
 
   // Spawn a new instance of this type
   add(id: number, transform: Matrix4): boolean {
+    // If there's at least one available slot, we reuse it before anything else
     if(this.availableSlots.size > 0) {
       const availableID = this.availableSlots.keys()[0]
       this.instanced.setMatrixAt(availableID, transform);
@@ -81,6 +87,7 @@ export class ObjectService {
   private errorCone: Group
   private rwxLoader = new RWXLoader(new LoadingManager())
   private objects: Map<string, Promise<any>> = new Map()
+  private cachedObjects: Map<string, Promise<any>> = new Map()
   private textures: Map<string, any> = new Map()
   private path = 'http://localhost'
   private defaultCount: number = 1000
@@ -115,20 +122,23 @@ export class ObjectService {
     }
   }
 
-  loadObject(name: string): Promise<any> {
-    if (this.objects.get(name) !== undefined) {
+  loadObject(name: string, cached: boolean = false): Promise<any> {
+    if (!cached && this.objects.get(name) !== undefined) {
       return this.objects.get(name)
+    } if (cached && this.cachedObjects.get(name) !== undefined) {
+      return this.cachedObjects.get(name)
     } else {
       const promise = new Promise((resolve, reject) => {
-        this.rwxLoader.load(name, (rwx: Mesh) => resolve(new CachedObject(rwx, this.defaultCount)), null, () => resolve(this.errorCone))
+        this.rwxLoader.load(name, (rwx: Mesh) => resolve(cached ? new CachedObject(rwx, this.defaultCount) : rwx), null, () => resolve(this.errorCone))
       })
-      this.objects.set(name, promise)
+      cached ? this.cachedObjects.set(name, promise) : this.objects.set(name, promise)
       return promise
     }
   }
 
   cleanCache() {
     this.objects = new Map()
+    this.cachedObjects = new Map()
     this.textures = new Map()
   }
 }

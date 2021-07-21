@@ -1,7 +1,7 @@
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
-import {ObjectService} from './object.service'
+import {ObjectService, CachedObject} from './object.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {flattenGroup} from 'three-rwx-loader'
@@ -140,23 +140,32 @@ export class WorldService {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
-    await this.objSvc.loadObject(item).then((o) => {
-      const g = o.clone()
-      g.name = item
-      g.userData.date = date
-      g.userData.desc = desc
-      g.userData.act = act
-      g.traverse((child: Object3D) => {
+
+    this.objSvc.loadObject(item, true).then((co: CachedObject) => {
+      // We are manipulating a cached object
+      co.name = item
+      co.date = date
+      co.desc = desc
+      co.act = act
+      co.instanced.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           //child.castShadow = true
         }
       })
+
+      // We disable actions for now
       if (act) {
         //this.execActions(g)
       }
-      g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
-      g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
-      this.worldObjects.add(g)
+
+      let dummy = new Object3D()
+      dummy.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
+      dummy.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
+      dummy.updateMatrix();
+
+      co.add(0, dummy.matrix)
+
+      this.engine.addInstancedObject(item, co.instanced)
     })
   }
 
