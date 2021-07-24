@@ -136,7 +136,7 @@ export class WorldService {
     }
   }
 
-  public async loadItem(item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
+  public async loadItem(id: number, item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
@@ -205,12 +205,16 @@ export class WorldService {
     }
     this.objSvc.cleanCache()
     this.objSvc.setPath(data.path)
+
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list
       this.setAvatar(this.avatarList[0].geometry, this.avatar)
     })
+
+    let i = 0;
+
     for (const item of data.objects) {
-      this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
+      this.loadItem(i++, item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
                     item[0], item[8], item[9])
     }
     if (data.entry) {
