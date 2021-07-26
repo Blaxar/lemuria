@@ -27,6 +27,7 @@ export class EngineService implements OnDestroy {
   private activeCamera: PerspectiveCamera
   private player: Object3D
   private scene: Scene
+  private worldGroup: Group = new Group()
   private light: AmbientLight
   private dirLight: DirectionalLight
   private avatar: Group
@@ -73,6 +74,7 @@ export class EngineService implements OnDestroy {
     this.renderer.shadowMap.type = PCFSoftShadowMap
 
     this.scene = new Scene()
+    this.scene.add(this.worldGroup)
 
     this.player = new Object3D()
     this.player.rotation.order = 'YXZ'
@@ -195,8 +197,12 @@ export class EngineService implements OnDestroy {
     }
   }
 
-  public addObject(group: Group) {
+  public addObjectToScene(group: Group) {
     this.scene.add(group)
+  }
+
+  public addObjectToWorld(group: Group) {
+    this.worldGroup.add(group)
   }
 
   public addMeshToOctree(group: Group) {
@@ -623,7 +629,7 @@ export class EngineService implements OnDestroy {
           this.playerCollider.start.z))
     }
 
-    for (const item of this.scene.children.filter(i => i.userData.rwx != null && i.userData.rwx.axisAlignment !== 'none')) {
+    for (const item of this.worldGroup.children.filter(i => i.userData.rwx != null && i.userData.rwx.axisAlignment !== 'none')) {
       item.rotation.y = this.player.rotation.y
     }
 

@@ -47,7 +47,7 @@ export class WorldService {
     skybox.add(new Mesh(skyGeometry, skyMaterials))
     skybox.name = 'skybox'
     skybox.userData.persist = true
-    this.engine.addObject(skybox)
+    this.engine.addObjectToScene(skybox)
 
     const floorTexture = this.textureLoader.load(`${RES_PATH}/textures/terrain17.jpg`)
     floorTexture.wrapS = RepeatWrapping
@@ -64,7 +64,7 @@ export class WorldService {
     floor.userData.persist = true
     floor.position.y = -0.01
     floor.rotation.x = -Math.PI / 2
-    this.engine.addObject(floor)
+    this.engine.addObjectToWorld(floor)
     this.engine.addMeshToOctree(floor)
 
     this.avatar = new Group()
@@ -154,7 +154,7 @@ export class WorldService {
       }
       g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
       g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
-      this.engine.addObject(g)
+      this.engine.addObjectToWorld(g)
     })
   }
 
@@ -226,7 +226,7 @@ export class WorldService {
       group.userData.player = true
       this.engine.createTextLabel(group)
       this.setAvatar(avatar, group)
-      this.engine.addObject(group)
+      this.engine.addObjectToScene(group)
     }
   }
 }
