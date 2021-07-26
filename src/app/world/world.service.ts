@@ -16,6 +16,7 @@ export class WorldService {
   private avatar: Group
   private textureLoader: TextureLoader
   private actionParser = new AWActionParser()
+  private worldObjects = new Group();
 
   constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService) {
   }
@@ -134,7 +135,7 @@ export class WorldService {
     }
   }
 
-  public loadItem(item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
+  public async loadItem(item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
@@ -146,15 +147,15 @@ export class WorldService {
       g.userData.act = act
       g.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
-          child.castShadow = true
+          //child.castShadow = true
         }
       })
       if (act) {
-        this.execActions(g)
+        //this.execActions(g)
       }
       g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
       g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
-      this.engine.addObjectToWorld(g)
+      this.worldObjects.add(g)
     })
   }
 
@@ -188,7 +189,7 @@ export class WorldService {
     })
   }
 
-  public setWorld(data: any) {
+  public async setWorld(data: any) {
     for (const item of this.engine.objects().filter(i => i.name.length > 0 && !i.userData?.persist)) {
       this.engine.removeObject(item as Group)
     }
@@ -199,12 +200,15 @@ export class WorldService {
       this.setAvatar(this.avatarList[0].geometry, this.avatar)
     })
     for (const item of data.objects) {
-      this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
+      await this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
                     item[0], item[8], item[9])
     }
     if (data.entry) {
       this.engine.teleport(data.entry)
     }
+
+    this.engine.addObjectToWorld(this.worldObjects);
+
     // Trigger list update to create users
     this.userSvc.listChanged.next(this.userSvc.userList)
   }
