@@ -70,7 +70,7 @@ export class EngineService implements OnDestroy {
       antialias: true // smooth edges
     })
     this.renderer.setSize(window.innerWidth, window.innerHeight)
-    this.renderer.shadowMap.enabled = true
+    this.renderer.shadowMap.enabled = false
     this.renderer.shadowMap.type = PCFSoftShadowMap
 
     this.scene = new Scene()
@@ -629,9 +629,9 @@ export class EngineService implements OnDestroy {
           this.playerCollider.start.z))
     }
 
-    for (const item of this.worldGroup.children.filter(i => i.userData.rwx != null && i.userData.rwx.axisAlignment !== 'none')) {
-      item.rotation.y = this.player.rotation.y
-    }
+    //for (const item of this.worldGroup.children.filter(i => i.userData.rwx != null && i.userData.rwx.axisAlignment !== 'none')) {
+    //  item.rotation.y = this.player.rotation.y
+    //}
 
     const sky = this.scene.children.find(o => o.name === 'skybox')
     if (sky != null) {

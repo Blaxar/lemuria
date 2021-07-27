@@ -4,6 +4,7 @@ import {EngineService, DEG} from './../engine/engine.service'
 import {ObjectService} from './object.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
+import {flattenGroup} from 'three-rwx-loader'
 import {AWActionParser} from 'aw-action-parser'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
   BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, Object3D} from 'three'
@@ -139,7 +140,7 @@ export class WorldService {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
-    this.objSvc.loadObject(item).then((o) => {
+    await this.objSvc.loadObject(item).then((o) => {
       const g = o.clone()
       g.name = item
       g.userData.date = date
