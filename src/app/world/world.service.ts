@@ -201,7 +201,7 @@ export class WorldService {
       this.setAvatar(this.avatarList[0].geometry, this.avatar)
     })
     for (const item of data.objects) {
-      await this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
+      this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
                     item[0], item[8], item[9])
     }
     if (data.entry) {
