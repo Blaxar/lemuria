@@ -5,22 +5,27 @@ import {Group, Mesh, InstancedMesh, ConeGeometry, LoadingManager, MeshBasicMater
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
 
-export class CachedObject {
+export class InstancedObject {
 
   private original: Mesh // Original instance of the loaded object.
   instanced: InstancedMesh // InstancedMesh for the object, allows for efficient spawning of multiple instances
   private globalToLocalIdMap = new Map<number, number>()
   private availableSlots = new Set<number>() // Maybe use a queue?
   private counter : number = 0
+  private maxCount : number
 
   name: string
   date: any
   desc: string
   act: string
 
+  added = false
+
   constructor( object: Mesh, count: number) {
     this.original = object
     this.instanced = new InstancedMesh(this.original.geometry, this.original.material, count)
+    this.maxCount = count
+    this.instanced.count = 0
   }
 
   // Spawn a new instance of this type
@@ -36,11 +41,12 @@ export class CachedObject {
     }
 
     // If the maximum number of instances has been reached: we cannot add more
-    if(this.counter >= this.instanced.count)
+    if(this.counter >= this.maxCount)
       return false;
 
     this.globalToLocalIdMap.set(id, this.counter)
     this.instanced.setMatrixAt(this.counter++, transform);
+    this.instanced.count = this.counter;
 
     return true;
   }
@@ -87,21 +93,21 @@ export class ObjectService {
   private errorCone: Group
   private rwxLoader = new RWXLoader(new LoadingManager())
   private objects: Map<string, Promise<any>> = new Map()
-  private cachedObjects: Map<string, Promise<any>> = new Map()
+  private instancedObjects: Map<string, Promise<any>> = new Map()
   private textures: Map<string, any> = new Map()
   private path = 'http://localhost'
-  private defaultCount: number = 1000
+  private defaultCount: number = 4096
 
   constructor(private http: HttpService) {
     const cone = new Mesh(new ConeGeometry(0.5, 0.5, 3), new MeshBasicMaterial({color: 0x000000}))
     cone.position.y = 0.5
     this.errorCone = new Group().add(cone)
-    this.rwxLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true);
+    this.rwxLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true).setWaitFullLoad(true);
   }
 
   setPath(path: string) {
     this.path = path
-    this.rwxLoader.setPath(`${this.path}/rwx`).setResourcePath(`${this.path}/textures`).setFlatten(true)
+    this.rwxLoader.setPath(`${this.path}/rwx`).setResourcePath(`${this.path}/textures`)
   }
 
   loadAvatars() {
@@ -122,23 +128,33 @@ export class ObjectService {
     }
   }
 
-  loadObject(name: string, cached: boolean = false): Promise<any> {
-    if (!cached && this.objects.get(name) !== undefined) {
+  loadObject(name: string): Promise<any> {
+    if (this.objects.get(name) !== undefined) {
       return this.objects.get(name)
-    } if (cached && this.cachedObjects.get(name) !== undefined) {
-      return this.cachedObjects.get(name)
     } else {
       const promise = new Promise((resolve, reject) => {
-        this.rwxLoader.load(name, (rwx: Mesh) => resolve(cached ? new CachedObject(rwx, this.defaultCount) : rwx), null, () => resolve(this.errorCone))
+        this.rwxLoader.load(name, (rwx: Mesh) => resolve(rwx), null, () => resolve(this.errorCone))
       })
-      cached ? this.cachedObjects.set(name, promise) : this.objects.set(name, promise)
+      this.objects.set(name, promise)
+      return promise
+    }
+  }
+
+  loadInstancedObject(name: string): Promise<any> {
+    if (this.instancedObjects.get(name) !== undefined) {
+      return this.instancedObjects.get(name)
+    } else {
+      const promise = new Promise((resolve, reject) => {
+        this.rwxLoader.load(name, (rwx: Mesh) => resolve(new InstancedObject(rwx, this.defaultCount)))
+      })
+      this.instancedObjects.set(name, promise)
       return promise
     }
   }
 
   cleanCache() {
     this.objects = new Map()
-    this.cachedObjects = new Map()
+    this.instancedObjects = new Map()
     this.textures = new Map()
   }
 }

@@ -1,7 +1,7 @@
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
-import {ObjectService, CachedObject} from './object.service'
+import {ObjectService, InstancedObject} from './object.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {flattenGroup} from 'three-rwx-loader'
@@ -9,6 +9,10 @@ import {AWActionParser} from 'aw-action-parser'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
   BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, Object3D} from 'three'
 export const RES_PATH = config.url.resource
+
+function sleep(ms: number) {
+  return new Promise( resolve => setTimeout(resolve, ms) );
+}
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -140,33 +144,41 @@ export class WorldService {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
-
-    this.objSvc.loadObject(item, true).then((co: CachedObject) => {
-      // We are manipulating a cached object
-      co.name = item
-      co.date = date
-      co.desc = desc
-      co.act = act
-      co.instanced.traverse((child: Object3D) => {
-        if (child instanceof Mesh) {
-          //child.castShadow = true
-        }
-      })
+    /*
+    this.objSvc.loadObject(item).then((obj: Object3D) => {
+      let rwx = obj.clone()
+      rwx.userData.name = item
+      rwx.userData.date = date
+      rwx.userData.desc = desc
+      rwx.userData.act = act
 
       // We disable actions for now
       if (act) {
         //this.execActions(g)
       }
 
+      //let dummy = new Object3D()
+      rwx.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
+      rwx.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
+      this.engine.addObjectToWorld(rwx)
+    })
+    */
+    await this.objSvc.loadInstancedObject(item).then((obj: InstancedObject) => {
+
       let dummy = new Object3D()
       dummy.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
       dummy.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
-      dummy.updateMatrix();
+      dummy.updateMatrix()
 
-      co.add(0, dummy.matrix)
+      obj.add(id, dummy.matrix)
 
-      this.engine.addInstancedObject(item, co.instanced)
+      if(!obj.added)
+      {
+        obj.added = true;
+        this.engine.addObjectToWorld(obj.instanced)
+      }
     })
+
   }
 
   setAvatar(name: string, group: Group = this.avatar) {
@@ -217,11 +229,10 @@ export class WorldService {
       this.loadItem(i++, item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
                     item[0], item[8], item[9])
     }
+
     if (data.entry) {
       this.engine.teleport(data.entry)
     }
-
-    this.engine.addObjectToWorld(this.worldObjects);
 
     // Trigger list update to create users
     this.userSvc.listChanged.next(this.userSvc.userList)

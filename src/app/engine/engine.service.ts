@@ -211,7 +211,7 @@ export class EngineService implements OnDestroy {
     if(!this.registeredInstances.has(name))
     {
       this.registeredInstances.add(name)
-      this.scene.add(instance)
+      this.worldGroup.add(instance)
     }
   }
 

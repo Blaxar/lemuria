@@ -103,7 +103,7 @@ async def import_world(attr_file, prop_file):
     await conn.execute(prop.delete().where(prop.c.wid==world_id))
     trans = await conn.begin()
     for o in prop_dump(prop_file):
-        if (abs(o[2]) <= 10000 and abs(o[4]) <= 10000):
+        if (abs(o[2]) <= 15000 and abs(o[4]) <= 15000):
             await conn.execute(prop.insert().values(wid=world_id, uid=admin_id, date=o[0], name=o[1],
                                                     x=o[2], y=o[3], z=o[4], pi=o[5], ya=o[6], ro=o[7],
                                                     desc=o[8], act=o[9]))
