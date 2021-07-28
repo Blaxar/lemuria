@@ -120,12 +120,12 @@ export class WorldService {
     }
   }
 
-  public loadItem(id: number, item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
+  public async loadItem(id: number, item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
     /*
-    this.objSvc.loadObject(item).then((o) => {
+    await this.objSvc.loadObject(item).then((o) => {
       const g = o.clone()
       g.name = item
       g.userData.date = date
@@ -139,7 +139,7 @@ export class WorldService {
       this.engine.addObject(g)
     })
     */
-    this.objSvc.loadInstancedObject(item).then((obj: InstancedObject) => {
+    await this.objSvc.loadInstancedObject(item).then((obj: InstancedObject) => {
 
       let dummy = new Object3D()
       dummy.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
@@ -180,7 +180,7 @@ export class WorldService {
     })
   }
 
-  public setWorld(data: any) {
+  public async setWorld(data: any) {
     // Children is a dynamic iterable, we need a copy to get all of them
     for (const item of [...this.engine.objects()]) {
       this.engine.removeObject(item as Group)
@@ -195,7 +195,7 @@ export class WorldService {
     let i = 0
 
     for (const item of data.objects) {
-      this.loadItem(i++, item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
+      await this.loadItem(i++, item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
                     item[0], item[8], item[9])
     }
     if (data.entry) {

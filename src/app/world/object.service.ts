@@ -92,6 +92,7 @@ export class InstancedObject {
 export class ObjectService {
 
   private errorCone: Group
+  private instancedErrorCone: InstancedObject
   private rwxLoader = new RWXLoader(new LoadingManager())
   private objects: Map<string, Promise<any>> = new Map()
   private instancedObjects: Map<string, Promise<any>> = new Map()
@@ -103,6 +104,7 @@ export class ObjectService {
     const cone = new Mesh(new ConeGeometry(0.5, 0.5, 3), new MeshBasicMaterial({color: 0x000000}))
     cone.position.y = 0.5
     this.errorCone = new Group().add(cone)
+    this.instancedErrorCone = new InstancedObject(cone, this.defaultCount)
     this.rwxLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true)
   }
 
@@ -170,12 +172,13 @@ export class ObjectService {
     }
   }
 
-  loadInstancedObject(name: string): Promise<any> {
+  async loadInstancedObject(name: string): Promise<any> {
     if (this.instancedObjects.get(name) !== undefined) {
       return this.instancedObjects.get(name)
     } else {
       const promise = new Promise((resolve, reject) => {
-        this.rwxLoader.load(name, (rwx: Mesh) => resolve(new InstancedObject(rwx, this.defaultCount)))
+        this.rwxLoader.load(name, (rwx: Mesh) => resolve(new InstancedObject(rwx, this.defaultCount)),
+          null, () => resolve(this.instancedErrorCone))
       })
       this.instancedObjects.set(name, promise)
       return promise
