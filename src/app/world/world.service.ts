@@ -1,12 +1,12 @@
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
-import {ObjectService} from './object.service'
+import {ObjectService, InstancedObject} from './object.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {AWActionParser} from 'aw-action-parser'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
-  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3} from 'three'
+  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, Object3D} from 'three'
 export const RES_PATH = config.url.resource
 
 @Injectable({providedIn: 'root'})
@@ -120,10 +120,11 @@ export class WorldService {
     }
   }
 
-  public loadItem(item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
+  public loadItem(id: number, item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
+    /*
     this.objSvc.loadObject(item).then((o) => {
       const g = o.clone()
       g.name = item
@@ -136,6 +137,22 @@ export class WorldService {
       g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
       g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
       this.engine.addObject(g)
+    })
+    */
+    this.objSvc.loadInstancedObject(item).then((obj: InstancedObject) => {
+
+      let dummy = new Object3D()
+      dummy.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
+      dummy.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
+      dummy.updateMatrix()
+
+      obj.add(id, dummy.matrix)
+
+      if(!obj.added)
+      {
+        obj.added = true;
+        this.engine.addObject(obj.instanced)
+      }
     })
   }
 
@@ -174,8 +191,11 @@ export class WorldService {
       this.avatarList = list
       this.setAvatar(this.avatarList[0].geometry, this.avatar)
     })
+
+    let i = 0
+
     for (const item of data.objects) {
-      this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
+      this.loadItem(i++, item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
                     item[0], item[8], item[9])
     }
     if (data.entry) {

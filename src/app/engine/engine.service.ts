@@ -204,11 +204,11 @@ export class EngineService implements OnDestroy {
     }
   }
 
-  public addObject(group: Group) {
+  public addObject(group: Object3D) {
     group.matrixAutoUpdate = false
     this.objectsNode.add(group)
     if (group.userData.rwx?.axisAlignment !== 'none') {
-      this.sprites.add(group)
+      //this.sprites.add(group)
     }
     group.updateMatrix()
   }
